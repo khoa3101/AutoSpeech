@@ -22,26 +22,29 @@ if __name__ == "__main__":
     # Process the arguments
     train_out_dir = args.dataset_root.joinpath("train")
     dev_out_dir = args.dataset_root.joinpath("dev")
-    test_out_dir = args.dataset_root.joinpath("test")
-    #merged_out_dir = args.dataset_root.joinpath("feature", "merged")
+    #test_out_dir = args.dataset_root.joinpath("test")
+    merged_out_dir = args.dataset_root.joinpath("merged")
     assert args.dataset_root.exists()
     #assert args.dataset_root.joinpath('iden_split.txt').exists()
     #assert args.dataset_root.joinpath('veri_test.txt').exists()
     #assert args.dataset_root.joinpath('vox1_meta.csv').exists()
     train_out_dir.mkdir(exist_ok=True, parents=True)
     dev_out_dir.mkdir(exist_ok=True, parents=True)
-    test_out_dir.mkdir(exist_ok=True, parents=True)
-    #merged_out_dir.mkdir(exist_ok=True, parents=True)
+    #test_out_dir.mkdir(exist_ok=True, parents=True)
+    merged_out_dir.mkdir(exist_ok=True, parents=True)
 
     # Preprocess the datasets
     preprocess_voxceleb1(args.dataset_root, 'train', train_out_dir, args.skip_existing)
     preprocess_voxceleb1(args.dataset_root, 'dev', dev_out_dir, args.skip_existing)
-    preprocess_voxceleb1(args.dataset_root, 'test', test_out_dir, args.skip_existing)
-    # for path in dev_out_dir.iterdir():
-    #     subprocess.call(['cp', '-r', path.as_posix(), merged_out_dir.as_posix()])
+    #preprocess_voxceleb1(args.dataset_root, 'test', test_out_dir, args.skip_existing)
+    #preprocess_voxceleb1(args.dataset_root, 'merged', merged_out_dir, args.skip_existing)
+    for path in train_out_dir.iterdir():
+        subprocess.call(['cp', '-r', path.as_posix(), merged_out_dir.as_posix()])
+    for path in dev_out_dir.iterdir():
+        subprocess.call(['cp', '-r', path.as_posix(), merged_out_dir.as_posix()])
     # for path in test_out_dir.iterdir():
     #     subprocess.call(['cp', '-r', path.as_posix(), merged_out_dir.as_posix()])
-    # compute_mean_std(merged_out_dir, args.dataset_root.joinpath('mean.npy'),
-    #                  args.dataset_root.joinpath('std.npy'))
+    compute_mean_std(merged_out_dir, args.dataset_root.joinpath('mean.npy'),
+                     args.dataset_root.joinpath('std.npy'))
     # partition_voxceleb(merged_out_dir, args.dataset_root.joinpath('iden_split.txt'))
     print("Done")

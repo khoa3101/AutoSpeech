@@ -8,7 +8,7 @@ CUDNN:
 
 DATASET:
   DATA_DIR: 'Zalo-dataset'
-  # SUB_DIR: 'dev'
+  SUB_DIR: 'train'
   NUM_WORKERS: 0
   PARTIAL_N_FRAMES: 300
 

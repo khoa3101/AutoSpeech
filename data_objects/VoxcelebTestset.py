@@ -14,7 +14,7 @@ def get_test_paths(pairs_path, db_dir):
         p = os.path.join(speaker_dir, fname)
         return p
 
-    pairs = [line.strip().split() for line in open(pairs_path, 'r').readlines()]
+    pairs = [line.strip().split(',') for line in open(pairs_path, 'r').readlines()]
     nrof_skipped_pairs = 0
     path_list = []
     issame_list = []
@@ -25,8 +25,8 @@ def get_test_paths(pairs_path, db_dir):
         else:
             issame = False
 
-        path0 = db_dir.joinpath(convert_folder_name(pair[1]))
-        path1 = db_dir.joinpath(convert_folder_name(pair[2]))
+        path0 = pair[1]#db_dir.joinpath(convert_folder_name(pair[1]))
+        path1 = pair[2]#db_dir.joinpath(convert_folder_name(pair[2]))
 
         if os.path.exists(path0) and os.path.exists(path1):    # Only add the pair if both paths exist
             path_list.append((path0,path1,issame))
@@ -43,7 +43,7 @@ class VoxcelebTestset(data.Dataset):
     def __init__(self, data_dir, partial_n_frames):
         super(VoxcelebTestset, self).__init__()
         self.data_dir = data_dir
-        self.root = data_dir.joinpath('feature', 'test')
+        self.root = data_dir.joinpath('dev')
         self.test_pair_txt_fpath = data_dir.joinpath('veri_test.txt')
         self.test_pairs = get_test_paths(self.test_pair_txt_fpath, self.root)
         self.partial_n_frames = partial_n_frames

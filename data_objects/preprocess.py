@@ -55,7 +55,7 @@ def _init_preprocess_dataset(dataset_name, dataset_root, out_dir) -> (Path, Data
     if not dataset_root.exists():
         print("Couldn\'t find %s, skipping this dataset." % dataset_root)
         return None, None
-    return dataset_root, DatasetLog(out_dir, dataset_name)
+    return dataset_root, DatasetLog(dataset_root, dataset_name)
 
 
 def _preprocess_speaker_dirs(speaker_dirs, dataset_name, datasets_root, out_dir, extension,
@@ -102,8 +102,8 @@ def _preprocess_speaker_dirs(speaker_dirs, dataset_name, datasets_root, out_dir,
             # Create the mel spectrogram, discard those that are too short
             # frames = audio.wav_to_mel_spectrogram(wav)
             frames = audio.wav_to_spectrogram(wav)
-            if len(frames) < partials_n_frames:
-                continue
+            #if len(frames) < partials_n_frames:
+            #    continue
 
             out_fpath = speaker_out_dir.joinpath(out_fname)
             np.save(out_fpath, frames)

@@ -6,14 +6,14 @@ def partition_voxceleb(feature_root, split_txt_path):
     with open(split_txt_path, 'r') as f:
         split_txt = f.readlines()
     train_set = []
-    val_set = []
+    dev_set = []
     test_set = []
     for line in split_txt:
         items = line.strip().split()
         if items[0] == '3':
             test_set.append(items[1])
         elif items[0] == '2':
-            val_set.append(items[1])
+            dev_set.append(items[1])
         else:
             train_set.append(items[1])
 
@@ -27,15 +27,15 @@ def partition_voxceleb(feature_root, split_txt_path):
             speaker_files = f.readlines()
 
         train = []
-        val = []
+        dev = []
         test = []
         for line in speaker_files:
             address = line.strip().split(',')[1]
             fname = os.path.join(*address.split('/')[-3:])
             if fname in test_set:
                 test.append(line)
-            elif fname in val_set:
-                val.append(line)
+            elif fname in dev_set:
+                dev.append(line)
             elif fname in train_set:
                 train.append(line)
             else:
@@ -43,7 +43,7 @@ def partition_voxceleb(feature_root, split_txt_path):
 
         with open(os.path.join(speaker_dir, '_sources_train.txt'), 'w') as f:
             f.writelines('%s' % line for line in train)
-        with open(os.path.join(speaker_dir, '_sources_val.txt'), 'w') as f:
+        with open(os.path.join(speaker_dir, '_sources_dev.txt'), 'w') as f:
             f.writelines('%s' % line for line in val)
         with open(os.path.join(speaker_dir, '_sources_test.txt'), 'w') as f:
             f.writelines('%s' % line for line in test)
