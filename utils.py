@@ -13,7 +13,7 @@ from collections import namedtuple
 
 plt.switch_backend('agg')
 
-Genotype = namedtuple('Genotype', 'normal normal_concat reduce reduce_concat')
+Genotype = namedtuple('Genotype', ['normal', 'normal_concat', 'reduce', 'reduce_concat'])
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)

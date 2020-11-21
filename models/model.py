@@ -59,7 +59,7 @@ class Cell(nn.Module):
 
 class Network(nn.Module):
 
-  def __init__(self, C, num_classes, layers, genotype):
+  def __init__(self, C, num_classes, layers, genotype, drop_path_prob=0.0):
     super(Network, self).__init__()
     self._C = C
     self._num_classes = num_classes
@@ -96,6 +96,7 @@ class Network(nn.Module):
 
     self.global_pooling = nn.AdaptiveAvgPool2d((1, 1))
     self.classifier = nn.Linear(C_prev, num_classes)
+    self.drop_path_prob = drop_path_prob
 
   def forward(self, input):
     input = input.unsqueeze(1)

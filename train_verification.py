@@ -78,7 +78,7 @@ def main():
     # load arch
     genotype = eval(args.text_arch)
 
-    model = Network(cfg.MODEL.INIT_CHANNELS, cfg.MODEL.NUM_CLASSES, cfg.MODEL.LAYERS, genotype)
+    model = Network(cfg.MODEL.INIT_CHANNELS, cfg.MODEL.NUM_CLASSES, cfg.MODEL.LAYERS, genotype, cfg.TRAIN.DROPPATH_PROB)
     model = model.cuda()
 
     optimizer = optim.Adam(
