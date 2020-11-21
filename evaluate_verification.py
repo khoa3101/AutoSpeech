@@ -5,18 +5,25 @@ from __future__ import print_function
 import argparse
 import numpy as np
 import os
+import logging
+import time
+import matplotlib.pyplot as plt
 from pathlib import Path
 
 import torch
 import torch.backends.cudnn as cudnn
+import torch.nn.functional as F
 
 from models.model import Network
 from models import resnet
 from config import cfg, update_config
 from utils import create_logger, Genotype
-from data_objects.VoxcelebTestset import VoxcelebTestset
-from functions import validate_verification
+from data_objects.ZaloTestset import ZaloTestset
+from utils import compute_eer
+from utils import AverageMeter, ProgressMeter, accuracy
 
+plt.switch_backend('agg')
+logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train autospeech network')
@@ -41,6 +48,44 @@ def parse_args():
     args = parser.parse_args()
 
     return args
+
+
+def validate_verification(cfg, model, test_loader, out_name):
+    batch_time = AverageMeter('Time', ':6.3f')
+    progress = ProgressMeter(
+        len(test_loader), batch_time, prefix='Test: ', logger=logger)
+
+    # switch to evaluate mode
+    model.eval()
+    distances = []
+
+    with torch.no_grad():
+        end = time.time()
+        for i, (input1, input2, path1, path2) in enumerate(test_loader):
+            input1 = input1.cuda(non_blocking=True).squeeze(0)
+            input2 = input2.cuda(non_blocking=True).squeeze(0)
+
+            # compute output
+            outputs1 = model(input1).mean(dim=0).unsqueeze(0)
+            outputs2 = model(input2).mean(dim=0).unsqueeze(0)
+
+            dists = F.cosine_similarity(outputs1, outputs2)
+            dists = dists.data.cpu().numpy()
+            distances.append('%s,%s,%f' % (path1, path2, dists))
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % 2000 == 0:
+                progress.print(i)
+
+    with open('%s.csv' % (out_name), 'w') as f:
+        f.write('audio_1,audio_2,label\n')
+        for idx, line in enumerate(distances):
+            f.write(line)
+            if not idx == len(distances)-1:
+                f.write('\n')
 
 
 def main():
@@ -88,7 +133,7 @@ def main():
     logger.info(cfg)
 
     # dataloader
-    test_dataset_verification = VoxcelebTestset(
+    test_dataset_verification = ZaloTestset(
         Path(cfg.DATASET.DATA_DIR), cfg.DATASET.PARTIAL_N_FRAMES
     )
     test_loader_verification = torch.utils.data.DataLoader(
@@ -100,7 +145,10 @@ def main():
         drop_last=False,
     )
 
-    validate_verification(cfg, model, test_loader_verification)
+    validate_verification(
+        cfg, model, test_loader_verification,
+        args.cfg.split('/')[-1].split('.')[0]
+    )
 
 
 

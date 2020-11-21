@@ -7,10 +7,10 @@ CUDNN:
   ENABLED: true
 
 DATASET:
-  DATA_DIR: '/path/to/VoxCeleb1'
-  SUB_DIR: 'dev'
+  DATA_DIR: 'Zalo-dataset'
+  SUB_DIR: 'train'
   NUM_WORKERS: 0
-  PARTIAL_N_FRAMES: 300
+  PARTIAL_N_FRAMES: 50
 
 TRAIN:
   BATCH_SIZE: 48
@@ -24,6 +24,6 @@ TRAIN:
 
 MODEL:
   NAME: 'model'
-  NUM_CLASSES: 1211
+  NUM_CLASSES: 399
   LAYERS: 8
   INIT_CHANNELS: 128

@@ -140,8 +140,8 @@ def main():
             eer = validate_verification(cfg, model, test_loader_verification)
 
             # remember best acc@1 and save checkpoint
-            is_best = True#eer < best_eer
-            best_eer = eer#min(eer, best_eer)
+            is_best = eer < best_eer
+            best_eer = min(eer, best_eer)
 
             # save
             logger.info('=> saving checkpoint to {}'.format(args.path_helper['ckpt_path']))
