@@ -114,6 +114,9 @@ def main():
     logger.info(f"selected architecture: {genotype}")
     logger.info("Number of parameters: {}".format(count_parameters(model)))
 
+    if torch.cuda.device_count() > 1:
+        model = torch.nn.DataParallel(model)
+
     # dataloader
     train_dataset = DeepSpeakerDataset(
         Path(cfg.DATASET.DATA_DIR),  cfg.DATASET.SUB_DIR, cfg.DATASET.PARTIAL_N_FRAMES)
@@ -166,7 +169,7 @@ def main():
             logger.info('=> saving checkpoint to {}'.format(args.path_helper['ckpt_path']))
             save_checkpoint({
                 'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
+                'state_dict': model.module.state_dict(),
                 'best_eer': best_eer,
                 'optimizer': optimizer.state_dict(),
                 'path_helper': args.path_helper
