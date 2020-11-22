@@ -76,7 +76,7 @@ def main():
     criterion = CrossEntropyLoss(cfg.MODEL.NUM_CLASSES).cuda()
 
     # load arch
-    genotype = Genotype(normal=[('dil_conv_5x5', 1), ('dil_conv_3x3', 0), ('dil_conv_5x5', 0), ('sep_conv_3x3', 1), ('sep_conv_3x3', 1), ('sep_conv_3x3', 2), ('dil_conv_3x3', 2), ('max_pool_3x3', 1)], normal_concat=range(2, 6), reduce=[('max_pool_3x3', 1), ('max_pool_3x3', 0), ('dil_conv_5x5', 2), ('max_pool_3x3', 1), ('dil_conv_5x5', 3), ('dil_conv_3x3', 2), ('dil_conv_5x5', 4), ('dil_conv_5x5', 2)], reduce_concat=range(2, 6))
+    genotype = eval("Genotype(normal=[('dil_conv_5x5', 1), ('dil_conv_3x3', 0), ('dil_conv_5x5', 0), ('sep_conv_3x3', 1), ('sep_conv_3x3', 1), ('sep_conv_3x3', 2), ('dil_conv_3x3', 2), ('max_pool_3x3', 1)], normal_concat=range(2, 6), reduce=[('max_pool_3x3', 1), ('max_pool_3x3', 0), ('dil_conv_5x5', 2), ('max_pool_3x3', 1), ('dil_conv_5x5', 3), ('dil_conv_3x3', 2), ('dil_conv_5x5', 4), ('dil_conv_5x5', 2)], reduce_concat=range(2, 6))")
 
     model = Network(cfg.MODEL.INIT_CHANNELS, cfg.MODEL.NUM_CLASSES, cfg.MODEL.LAYERS, genotype, cfg.TRAIN.DROPPATH_PROB)
     model = model.cuda()
@@ -169,9 +169,11 @@ def main():
             logger.info('=> saving checkpoint to {}'.format(args.path_helper['ckpt_path']))
             save_checkpoint({
                 'epoch': epoch + 1,
-                'state_dict': model.module.state_dict(),
+                'state_dict': model.module.state_dict() if torch.cuda.device_count() > 1 else model.state_dict(),
                 'best_eer': best_eer,
                 'optimizer': optimizer.state_dict(),
+                'arch': model.module.arch_parameters() if torch.cuda.device_count() > 1 else model.arch_parameters(),
+                'genotype': genotype,
                 'path_helper': args.path_helper
             }, is_best, args.path_helper['ckpt_path'], 'checkpoint_{}.pth'.format(epoch))
 
