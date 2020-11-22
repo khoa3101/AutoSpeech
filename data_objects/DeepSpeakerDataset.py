@@ -10,6 +10,8 @@ from data_objects.transforms import Normalize, TimeReverse, generate_test_sequen
 
 def find_classes(speakers):
     classes = list(set([speaker.name for speaker in speakers]))
+    if '504-F-25' in classes:
+        classes.remove('504-F-25')
     classes.sort()
     class_to_idx = {classes[i]: i for i in range(len(classes))}
     return classes, class_to_idx

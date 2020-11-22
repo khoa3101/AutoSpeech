@@ -24,7 +24,8 @@ import torch.backends.cudnn as cudnn
 from config import cfg, update_config
 from utils import set_path, create_logger, save_checkpoint
 from data_objects.DeepSpeakerDataset import DeepSpeakerDataset
-from functions import train, validate_identification
+from data_objects.VoxcelebTestset import VoxcelebTestset
+from functions import train, validate_verification
 from architect import Architect
 from loss import CrossEntropyLoss
 from torch.utils.data import DataLoader
@@ -97,7 +98,7 @@ def main():
         begin_epoch = checkpoint['epoch']
         last_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['state_dict'])
-        best_acc1 = checkpoint['best_acc1']
+        best_acc1 = checkpoint['best_eer']
         optimizer.load_state_dict(checkpoint['optimizer'])
         args.path_helper = checkpoint['path_helper']
 
@@ -108,7 +109,7 @@ def main():
         args.path_helper = set_path('logs_search', exp_name)
         logger = create_logger(args.path_helper['log_path'])
         begin_epoch = cfg.TRAIN.BEGIN_EPOCH
-        best_acc1 = 0.0
+        best_eer = 0.0
         last_epoch = -1
 
     logger.info(args)
@@ -121,10 +122,38 @@ def main():
         args.path_helper['ckpt_path'])
 
     # dataloader
+    # train_dataset = DeepSpeakerDataset(
+    #     Path(cfg.DATASET.DATA_DIR), cfg.DATASET.SUB_DIR, cfg.DATASET.PARTIAL_N_FRAMES, 'train')
+    # val_dataset = DeepSpeakerDataset(
+    #     Path(cfg.DATASET.DATA_DIR), cfg.DATASET.SUB_DIR, cfg.DATASET.PARTIAL_N_FRAMES, 'val')
+    # train_loader = torch.utils.data.DataLoader(
+    #     dataset=train_dataset,
+    #     batch_size=cfg.TRAIN.BATCH_SIZE,
+    #     num_workers=cfg.DATASET.NUM_WORKERS,
+    #     pin_memory=True,
+    #     shuffle=True,
+    #     drop_last=True,
+    # )
+    # val_loader = torch.utils.data.DataLoader(
+    #     dataset=val_dataset,
+    #     batch_size=cfg.TRAIN.BATCH_SIZE,
+    #     num_workers=cfg.DATASET.NUM_WORKERS,
+    #     pin_memory=True,
+    #     shuffle=True,
+    #     drop_last=True,
+    # )
+    # test_dataset = DeepSpeakerDataset(
+    #     Path(cfg.DATASET.DATA_DIR), cfg.DATASET.SUB_DIR, cfg.DATASET.PARTIAL_N_FRAMES, 'test', is_test=True)
+    # test_loader = torch.utils.data.DataLoader(
+    #     dataset=test_dataset,
+    #     batch_size=1,
+    #     num_workers=cfg.DATASET.NUM_WORKERS,
+    #     pin_memory=True,
+    #     shuffle=True,
+    #     drop_last=True,
+    # )
     train_dataset = DeepSpeakerDataset(
-        Path(cfg.DATASET.DATA_DIR), cfg.DATASET.SUB_DIR, cfg.DATASET.PARTIAL_N_FRAMES, 'train')
-    val_dataset = DeepSpeakerDataset(
-        Path(cfg.DATASET.DATA_DIR), cfg.DATASET.SUB_DIR, cfg.DATASET.PARTIAL_N_FRAMES, 'val')
+        Path(cfg.DATASET.DATA_DIR),  cfg.DATASET.SUB_DIR, cfg.DATASET.PARTIAL_N_FRAMES)
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset,
         batch_size=cfg.TRAIN.BATCH_SIZE,
@@ -133,6 +162,8 @@ def main():
         shuffle=True,
         drop_last=True,
     )
+    val_dataset = DeepSpeakerDataset(
+        Path(cfg.DATASET.DATA_DIR),  'dev', cfg.DATASET.PARTIAL_N_FRAMES)
     val_loader = torch.utils.data.DataLoader(
         dataset=val_dataset,
         batch_size=cfg.TRAIN.BATCH_SIZE,
@@ -141,15 +172,15 @@ def main():
         shuffle=True,
         drop_last=True,
     )
-    test_dataset = DeepSpeakerDataset(
-        Path(cfg.DATASET.DATA_DIR), cfg.DATASET.SUB_DIR, cfg.DATASET.PARTIAL_N_FRAMES, 'test', is_test=True)
-    test_loader = torch.utils.data.DataLoader(
-        dataset=test_dataset,
+    test_dataset_verification = VoxcelebTestset(
+        Path(cfg.DATASET.DATA_DIR), cfg.DATASET.PARTIAL_N_FRAMES)
+    test_loader_verification = torch.utils.data.DataLoader(
+        dataset=test_dataset_verification,
         batch_size=1,
         num_workers=cfg.DATASET.NUM_WORKERS,
         pin_memory=True,
-        shuffle=True,
-        drop_last=True,
+        shuffle=False,
+        drop_last=False,
     )
 
     # training setting
@@ -179,20 +210,20 @@ def main():
 
         if epoch % cfg.VAL_FREQ == 0:
             # get threshold and evaluate on validation set
-            acc = validate_identification(cfg, model, test_loader, criterion)
+            eer = validate_verification(cfg, model, test_loader_verification)
 
             # remember best acc@1 and save checkpoint
-            is_best = acc > best_acc1
-            best_acc1 = max(acc, best_acc1)
+            is_best = eer < best_eer
+            best_eer = min(eer, best_eer)
 
             # save
             logger.info('=> saving checkpoint to {}'.format(args.path_helper['ckpt_path']))
             save_checkpoint({
                 'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
-                'best_acc1': best_acc1,
+                'state_dict': model.module.state_dict() if torch.cuda.device_count() > 1 else model.state_dict(),
+                'best_eer': best_eer,
                 'optimizer': optimizer.state_dict(),
-                'arch': model.arch_parameters(),
+                'arch': model.module.arch_parameters() if torch.cuda.device_count() > 1 else model.arch_parameters(),
                 'genotype': genotype,
                 'path_helper': args.path_helper
             }, is_best, args.path_helper['ckpt_path'], 'checkpoint_{}.pth'.format(epoch))
